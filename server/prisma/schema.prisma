@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  email            String             @unique
+  passwordHash     String
+  name             String
+  role             Role               @default(STUDENT)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  userCompetencies UserCompetency[]
+  ratings          Rating[]
+}
+
+model Competency {
+  id                Int                @id @default(autoincrement())
+  name              String             @unique
+  courseCompetencies CourseCompetency[]
+  userCompetencies   UserCompetency[]
+  questions          Question[]
+}
+
+model Course {
+  id                 Int                @id @default(autoincrement())
+  title              String
+  description        String
+  difficulty         Int                @default(1) // 1 to 5
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  courseCompetencies CourseCompetency[]
+  ratings            Rating[]
+}
+
+model CourseCompetency {
+  courseId     Int
+  competencyId Int
+  weight       Float  // Внесок курсу в розвиток компетентності (від 0 до 1)
+
+  course       Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, competencyId])
+}
+
+model UserCompetency {
+  userId       Int
+  competencyId Int
+  level        Float  // Рівень володіння компетентністю користувачем (від 0 до 1)
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@id([userId, competencyId])
+}
+
+model Question {
+  id           Int        @id @default(autoincrement())
+  text         String
+  competencyId Int
+  answers      Answer[]
+
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  text       String
+  isCorrect  Boolean
+
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  userId   Int
+  courseId Int
+  score    Int    // Від 1 до 5
+
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, courseId])
+}
